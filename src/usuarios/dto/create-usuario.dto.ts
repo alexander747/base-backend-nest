@@ -24,3 +24,15 @@ export class CreateUsuarioDto {
 }
 
 
+export class LoginUsuarioDto {
+    @IsNotEmpty()
+    @IsString()
+    usuario: string;
+
+    @IsNotEmpty()
+    @IsString()
+    password: string;
+
+}
+
+

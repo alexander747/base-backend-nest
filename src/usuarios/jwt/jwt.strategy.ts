@@ -1,18 +1,23 @@
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import { Usuario } from "../entities/usuario.entity";
 import { IJwtPayload } from "../interfaces/jwt.interface";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { CustomError } from "src/interceptors/custom-error";
 import { Injectable } from "@nestjs/common";
 import { IUsuarioLogueado } from "../interfaces/usuarioLogueado.interface";
-import { UsuariosService } from "src/usuarios/usuarios.service";
 
 
+//TODO:  JwtStrategy Se tiene que importar en los providers porque es un injectable y se debe exportar para otros modulos
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
 
     constructor(
-        private readonly serviceUsuario: UsuariosService,
+
+        @InjectRepository(Usuario)
+        private readonly serviceUsuario: Repository<Usuario>,
         configService: ConfigService
     ) {
         super({
@@ -24,8 +29,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     //TODO: ESTO ES PARA EL AUTH TOKEN
     async validate(payload: IJwtPayload): Promise<IUsuarioLogueado> {
-        const { id, identificacion, nombres, usuario } = payload;
-        const userBD = await this.serviceUsuario.findOneByJwtStrategy(id);
+        const {
+            id,
+            usuario,
+            nombres,
+            identificacion
+        } = payload;
+        const userBD = await this.serviceUsuario.findOne({
+            where: {
+                id
+            },
+            // relations: {
+            //     empresas: true
+            // }
+        });
 
         if (!userBD) {
             throw new CustomError(401, `Token invalido`);
@@ -39,9 +56,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         //TODO: ESTO SE AGREGA AL REQUEST DE LA PETICION HTTP
         return {
             id,
-            identificacion,
+            usuario,
             nombres,
-            usuario
+            identificacion
+
         };
     }
 

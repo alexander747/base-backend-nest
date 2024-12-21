@@ -1,14 +1,15 @@
 import { JwtService } from '@nestjs/jwt';
 import { Injectable } from '@nestjs/common';
-import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { CreateUsuarioDto, LoginUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Usuario } from './entities/usuario.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomError } from 'src/interceptors/custom-error';
 import * as bcrypt from 'bcrypt'
-import { IJwtPayload } from 'src/auth/interfaces/jwt.interface';
 import { ConfigService } from '@nestjs/config';
+import { IJwtPayload } from './interfaces/jwt.interface';
+import { IUsuarioLogueado } from './interfaces/usuarioLogueado.interface';
 
 
 @Injectable()
@@ -32,7 +33,9 @@ export class UsuariosService {
   }
 
 
-  async create(createUsuarioDto: CreateUsuarioDto) {
+  async create(createUsuarioDto: CreateUsuarioDto, usuarioLogueado: IUsuarioLogueado) {
+    console.log({ usuarioLogueado });
+
     const existe = await this.findOneBy({ usuario: createUsuarioDto.usuario });
     if (existe) {
       throw new CustomError(422, `Ya existe el usuario ${createUsuarioDto.identificacion} en el sistema.`);
@@ -49,44 +52,35 @@ export class UsuariosService {
     return nuevo;
   }
 
-  async login(usuario: string, password: string) {
-    console.log("LLEGNADO LOGIND");
-
+  async login(data: LoginUsuarioDto) {
     const userBd = await this.oneRepository.findOne({
-      where: { usuario: usuario },
+      where: { usuario: data.usuario },
     });
-
-    console.log("userBd", userBd);
 
     if (!userBd) {
       throw new CustomError(401, `Credenciales no validas.`);
     }
 
-    if (!bcrypt.compareSync(password, userBd.password)) {
+    if (!bcrypt.compareSync(data.password, userBd.password)) {
       throw new CustomError(401, `Credenciales no validas..`);
     }
-
-
     return {
-      usuario: {
-        ...userBd,
-      },
+      usuario: userBd,
       token: this.getToken({
         id: userBd.id,
         usuario: userBd.usuario,
         nombres: userBd.nombres,
         identificacion: userBd.identificacion
-      })
+      }),
     };
   }
 
   private getToken(payload: IJwtPayload) {
-    console.log("OBTENIENDO TOKEN", payload);
-
     const token = this.serviceToken.sign(payload);
-    console.log("TOKEN", token);
     return token;
   }
+
+
 
   findAll() {
     return `This action returns all usuarios`;

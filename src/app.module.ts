@@ -2,7 +2,6 @@ import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsuariosModule } from './usuarios/usuarios.module';
-import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerMiddleware } from './middlewares/logsMiddleware';
@@ -29,8 +28,6 @@ import { LoggerMiddleware } from './middlewares/logsMiddleware';
       synchronize: true, //TODO: en produccion en false
       // timezone: 'America/Bogota',
     }),
-
-    AuthModule,
     UsuariosModule,
   ],
   controllers: [AppController],
